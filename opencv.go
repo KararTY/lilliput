@@ -3,12 +3,15 @@ package lilliput
 // #cgo CFLAGS: -msse -msse2 -msse3 -msse4.1 -msse4.2 -mavx
 // #cgo darwin CFLAGS: -I${SRCDIR}/deps/osx/include
 // #cgo linux CFLAGS: -I${SRCDIR}/deps/linux/include
+// #cgo windows CFLAGS: -I${SRCDIR}/deps/windows/include
 // #cgo CXXFLAGS: -std=c++11
 // #cgo darwin CXXFLAGS: -I${SRCDIR}/deps/osx/include
 // #cgo linux CXXFLAGS: -I${SRCDIR}/deps/linux/include
-// #cgo LDFLAGS:  -lopencv_core -lopencv_imgcodecs -lopencv_imgproc -ljpeg -lpng -lwebp -lippicv -lz
-// #cgo darwin LDFLAGS: -L${SRCDIR}/deps/osx/lib -L${SRCDIR}/deps/osx/share/OpenCV/3rdparty/lib -framework Accelerate
-// #cgo linux LDFLAGS: -L${SRCDIR}/deps/linux/lib -L${SRCDIR}/deps/linux/share/OpenCV/3rdparty/lib
+// #cgo windows CXXFLAGS: -I${SRCDIR}/deps/windows/include
+// #cgo LDFLAGS:  -lopencv_core -lopencv_imgcodecs -lopencv_imgproc -ljpeg -lpng -lwebp -lz
+// #cgo darwin LDFLAGS: -L${SRCDIR}/deps/osx/lib -L${SRCDIR}/deps/osx/share/OpenCV/3rdparty/lib -framework Accelerate -lippicv
+// #cgo linux LDFLAGS: -L${SRCDIR}/deps/linux/lib -L${SRCDIR}/deps/linux/share/OpenCV/3rdparty/lib -lippicv
+// #cgo windows LDFLAGS: -L${SRCDIR}/deps/windows/x64/mingw/staticlib -L${SRCDIR}/deps/windows/share/OpenCV/3rdparty/lib
 // #include "opencv.hpp"
 import "C"
 
