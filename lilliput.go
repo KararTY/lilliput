@@ -14,11 +14,13 @@ var (
 	ErrDecodingFailed   = errors.New("failed to decode image")
 	ErrBufTooSmall      = errors.New("buffer too small to hold image")
 	ErrFrameBufNoPixels = errors.New("Framebuffer contains no pixels")
+	ErrSkipNotSupported = errors.New("skip operation not supported by this decoder")
 
 	gif87Magic   = []byte("GIF87a")
 	gif89Magic   = []byte("GIF89a")
 	mp42Magic    = []byte("ftypmp42")
 	mp4IsomMagic = []byte("ftypisom")
+	pngMagic     = []byte{0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a}
 )
 
 // A Decoder decompresses compressed image data.
@@ -42,6 +44,10 @@ type Decoder interface {
 	// DecodeTo fully decodes the image pixel data into f. Generally users should
 	// prefer instead using the ImageOps object to decode images.
 	DecodeTo(f *Framebuffer) error
+
+	// SkipFrame skips a frame if the decoder supports multiple frames
+	// and returns io.EOF if the last frame has been reached
+	SkipFrame() error
 }
 
 // An Encoder compresses raw pixel data into a well-known image type.

@@ -2,6 +2,7 @@ package lilliput
 
 import (
 	"io"
+	"time"
 )
 
 type ImageOpsSizeMethod int
@@ -36,6 +37,12 @@ type ImageOptions struct {
 
 	// EncodeOptions controls the encode quality options
 	EncodeOptions map[int]int
+
+	// MaxEncodeFrames controls the maximum number of frames that will be resized
+	MaxEncodeFrames int
+
+	// MaxEncodeDuration controls the maximum duration of animated image that will be resized
+	MaxEncodeDuration time.Duration
 }
 
 // ImageOps is a reusable object that can resize and encode images.
@@ -123,6 +130,16 @@ func (o *ImageOps) encodeEmpty(e Encoder, opt map[int]int) ([]byte, error) {
 	return e.Encode(nil, opt)
 }
 
+func (o *ImageOps) skipToEnd(d Decoder) error {
+	var err error
+	for {
+		err = d.SkipFrame()
+		if err != nil {
+			return err
+		}
+	}
+}
+
 // Transform performs the requested transform operations on the Decoder specified by d.
 // The result is written into the output buffer dst. A new slice pointing to dst is returned
 // with its length set to the length of the resulting image. Errors may occur if the decoded
@@ -141,6 +158,9 @@ func (o *ImageOps) Transform(d Decoder, opt *ImageOptions, dst []byte) ([]byte, 
 	}
 	defer enc.Close()
 
+	frameCount := 0
+	duration := time.Duration(0)
+
 	for {
 		err = o.decode(d)
 		emptyFrame := false
@@ -150,6 +170,16 @@ func (o *ImageOps) Transform(d Decoder, opt *ImageOptions, dst []byte) ([]byte, 
 			}
 			// io.EOF means we are out of frames, so we should signal to encoder to wrap up
 			emptyFrame = true
+		}
+
+		duration += o.active().Duration()
+
+		if opt.MaxEncodeDuration != 0 && duration > opt.MaxEncodeDuration {
+			err = o.skipToEnd(d)
+			if err != io.EOF {
+				return nil, err
+			}
+			return o.encodeEmpty(enc, opt.EncodeOptions)
 		}
 
 		o.normalizeOrientation(h.Orientation())
@@ -180,6 +210,16 @@ func (o *ImageOps) Transform(d Decoder, opt *ImageOptions, dst []byte) ([]byte, 
 
 		if content != nil {
 			return content, nil
+		}
+
+		frameCount++
+
+		if opt.MaxEncodeFrames != 0 && frameCount == opt.MaxEncodeFrames {
+			err = o.skipToEnd(d)
+			if err != io.EOF {
+				return nil, err
+			}
+			return o.encodeEmpty(enc, opt.EncodeOptions)
 		}
 
 		// content == nil and err == nil -- this is encoder telling us to do another frame

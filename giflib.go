@@ -139,7 +139,21 @@ func (d *gifDecoder) DecodeTo(f *Framebuffer) error {
 	if !ret {
 		return ErrDecodingFailed
 	}
+	f.duration = time.Duration(C.giflib_decoder_get_prev_frame_delay(d.decoder)) * 10 * time.Millisecond
 	d.frameIndex++
+	return nil
+}
+
+func (d *gifDecoder) SkipFrame() error {
+	nextFrameResult := int(C.giflib_decoder_skip_frame(d.decoder))
+
+	if nextFrameResult == C.giflib_decoder_eof {
+		return io.EOF
+	}
+	if nextFrameResult == C.giflib_decoder_error {
+		return ErrInvalidImage
+	}
+
 	return nil
 }
 
